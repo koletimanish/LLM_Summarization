@@ -1,0 +1,3 @@
+"""
+NorthCloud Take Home Project
+""" 

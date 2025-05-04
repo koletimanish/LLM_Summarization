@@ -1,8 +1,10 @@
-from typing import List, Dict, Any
 import time
+import json
+from datetime import datetime
+
+from typing import List, Dict, Any
 from openai import OpenAI
 from app.core.config import settings
-from app.models.schemas import Citation
 
 class LLMService:
     def __init__(self):
@@ -17,33 +19,77 @@ class LLMService:
         return response.choices[0].message.content
     
     def _generate_messy_data(self, row_data):
+        row_data = row_data.to_dict()
+        structured_json = json.dumps(row_data, indent=2)
+
+        print(structured_json)
+
+        prompt = f"""You are a tech or business journalist writing a short paragraph based on structured startup data. 
+            Each paragraph should sound natural, as if it were taken from an article, press release, blog post, or investor newsletter.
+
+            Here are your writing rules:
+            - First, check if there is funding data (funding_round_type, funding_round_code, raised_amount). If present, write a funding-focused summary.
+            - Only if there is no funding data, write about acquisition data (if available).
+            - Vary the tone: some summaries can be formal, others casual or speculative.
+            - Vary the focus: some may emphasize funding, others the product, the location, the acquisition, or the industry.
+            - Do NOT try to include all the fields. Select a few that feel relevant and omit the rest.
+            - You MUST always mention:
+                - For funding summaries: the company name, funding round details, amount raised, and the source (funding_source_url)
+                - For acquisition summaries: the company name, acquiring company, price, and the source (acquisition_source_url)
+            - Avoid bullet points or lists. Return only a natural paragraph that is not too long.
+
+            Structured data:
+            {structured_json}
+        """
+
         response = self.client.chat.completions.create(
             model=self.model,
-            messages=[{"role": "user", "content": "Generate messy startup data"}]
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.7  # Add temperature for variation
         )
         return response.choices[0].message.content
 
     def _create_system_prompt(self) -> str:
-        return """You are an expert startup data analyst. Your task is to analyze and summarize startup-related information.
-        Provide a clear, concise summary with specific citations from the source material.
-        Focus on key metrics, funding information, market position, and growth potential.
-        Format your response as a JSON object with the following structure:
+        return """You are an intelligent information extractor that analyzes messy or unstructured descriptions of startups.
+
+        Given a paragraph describing a startup, extract the relevant information and return it in a structured JSON format using the following fields:
+
+        - name: string (required, acquired/funded company name)
+        - industry: string (optional, if available)
+        - location: string (optional, if available)
+        - founded_year: string (optional, if available)
+        - funding_total_usd: string (optional, if available)
+        - funding_stage: string (e.g. Seed, Series A, Series B, etc. — optional, if available)
+        - investors: list of strings (optional, if available)
+        - acquiring_company: string (optional, if available)
+        - acquisition_date: string in YYYY-MM-DD format (optional, if available)
+        - acquisition_price: string (optional, if available)
+        - source: string (must be included will typically be a URL, put "From Kaggle" if not available)
+
+        If a field is not mentioned in the input, omit it entirely from the JSON. Do not guess or make up information.
+
+        Always return a valid JSON object — no comments, extra text, or explanations.
+
+        Examples of valid output:
         {
-            "summary": "Your concise summary here",
-            "citations": [
-                {
-                    "text": "The exact quote or fact",
-                    "source": "Where this information came from"
-                }
-            ]
+        "name": "Fintrack",
+        "industry": "Fintech",
+        "location": "New York",
+        "founded_year": 2020,
+        "funding_stage": "Series A",
+        "investors": ["Sequoia Capital"],
+        "acquiring_company": "Plaid",
+        "acquisition_date": "2021-01-01",
+        "acquisition_price": "100M",
+        "source": "www.techcrunch.com"
         }"""
 
     def _create_user_prompt(self, text: str, max_length: int) -> str:
         return f"""Please analyze the following startup data and provide a summary of maximum {max_length} words:
 
-{text}
+        {text}
 
-Remember to include specific citations and maintain a professional tone."""
+        Remember to include specific citations from the provided text and maintain a professional tone."""
 
     async def generate_summary(self, text: str, max_length: int = 500) -> Dict[str, Any]:
         start_time = time.time()
@@ -64,46 +110,19 @@ Remember to include specific citations and maintain a professional tone."""
             
             # Parse the JSON response
             import json
-            result = json.loads(content)
+            startup_info = json.loads(content)
             
             # Add processing metadata
             processing_time = time.time() - start_time
             
             return {
-                "summary": result["summary"],
-                "citations": [
-                    Citation(
-                        text=citation["text"],
-                        source=citation["source"],
-                        timestamp=None
-                    ) for citation in result["citations"]
-                ],
+                "startup_info": startup_info,
                 "metadata": {
                     "processing_time": processing_time,
-                    "model_used": self.model
+                    "model_used": self.model,
+                    "timestamp": datetime.utcnow()
                 }
             }
             
         except Exception as e:
-            raise Exception(f"Error generating summary: {str(e)}")
-
-    async def process_large_text(self, text: str, max_length: int = 500) -> Dict[str, Any]:
-        """Process large texts by chunking and combining summaries."""
-        from app.services.data_processor import DataProcessor
-        
-        chunks = DataProcessor.chunk_text(text)
-        summaries = []
-        all_citations = []
-        
-        for chunk in chunks:
-            result = await self.generate_summary(chunk, max_length // len(chunks))
-            summaries.append(result["summary"])
-            all_citations.extend(result["citations"])
-        
-        # Combine summaries
-        combined_summary = " ".join(summaries)
-        
-        # Generate final summary of combined summaries
-        final_result = await self.generate_summary(combined_summary, max_length)
-        
-        return final_result 
+            raise Exception(f"Error generating summary: {str(e)}") 

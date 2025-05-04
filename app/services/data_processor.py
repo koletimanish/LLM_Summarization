@@ -39,7 +39,7 @@ class DataProcessor:
         """Process input data, handling both direct text and URLs."""
         if data.startswith(('http://', 'https://')):
             return DataProcessor.extract_from_url(data)
-        return DataProcessor.clean_text(data), "direct_input"
+        return DataProcessor.clean_text(data)
 
     @staticmethod
     def chunk_text(text: str, max_length: int = settings.MAX_INPUT_LENGTH) -> List[str]:

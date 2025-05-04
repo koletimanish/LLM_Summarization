@@ -15,22 +15,21 @@ llm_service = LLMService()
         500: {"model": ErrorResponse}
     }
 )
+
 async def summarize_data(request: SummarizeRequest):
     try:
         # Process input data
-        processed_text, source = DataProcessor.process_input(request.data)
+        processed_text = DataProcessor.process_input(request.data)
+
+        print(processed_text)
         
-        # Generate summary
-        result = await llm_service.process_large_text(
+        # Generate summary directly
+        result = await llm_service.generate_summary(
             processed_text,
             max_length=request.max_length
         )
-        
-        # Add metadata
-        result["metadata"].update({
-            "source": source,
-            "timestamp": datetime.utcnow()
-        })
+
+        print(result)
         
         return SummarizeResponse(**result)
         
