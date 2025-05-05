@@ -2,12 +2,13 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 from datetime import datetime
 
+# User request schema
 class SummarizeRequest(BaseModel):
-    data: str = Field(..., description="Raw startup data text or URL to process")
+    data: str = Field(..., description="Raw startup data text")
     max_length: Optional[int] = Field(500, description="Maximum length of the summary in words")
-    model: Optional[str] = Field("gpt-4o-mini", description="LLM model to use for summarization")
 
-class StartupInfo(BaseModel):
+# LLM response schema
+class LLMSummarizationResponse(BaseModel):
     name: str
     industry: Optional[str] = None
     location: Optional[str] = None
@@ -20,15 +21,18 @@ class StartupInfo(BaseModel):
     acquisition_price: Optional[str] = None
     source: str
 
+# Unnecessary for now, but could be useful for future reference/implementations
 class Metadata(BaseModel):
     processing_time: float
     model_used: str
     timestamp: datetime
 
+# API response schema
 class SummarizeResponse(BaseModel):
-    startup_info: StartupInfo
+    startup_info: LLMSummarizationResponse
     metadata: Metadata
 
+# Error response schema
 class ErrorResponse(BaseModel):
     error: str
     detail: Optional[str] = None 

@@ -7,6 +7,7 @@ from datetime import datetime
 router = APIRouter()
 llm_service = LLMService()
 
+# Only route for now, can add more routes later depending on expanding the scenario
 @router.post(
     "/summarize",
     response_model=SummarizeResponse,
@@ -16,20 +17,19 @@ llm_service = LLMService()
     }
 )
 
+# async specifically so we can use async LLM service with requests
 async def summarize_data(request: SummarizeRequest):
     try:
-        # Process input data
         processed_text = DataProcessor.process_input(request.data)
 
         print(processed_text)
         
-        # Generate summary directly
+        # Generate summary directly with no pre-processing
+        # Assumes the input text is not too long and the LLM can handle it
         result = await llm_service.generate_summary(
             processed_text,
             max_length=request.max_length
         )
-
-        print(result)
         
         return SummarizeResponse(**result)
         
@@ -38,6 +38,7 @@ async def summarize_data(request: SummarizeRequest):
             status_code=400,
             detail=str(e)
         )
+    
     except Exception as e:
         raise HTTPException(
             status_code=500,

@@ -1,12 +1,12 @@
 # LLM Startup Data Summarization Microservice
 
-This microservice processes raw startup data and generates structured summaries with citations using LLM technology.
+This microservice processes raw startup data and generates structured summaries using LLM technology. It can handle both funding and acquisition data, providing natural language summaries with proper citations.
 
 ## Features
 
 - Data ingestion and cleaning
-- LLM-powered summarization
-- Structured output with citations
+- LLM-powered summarization with funding/acquisition focus
+- Structured JSON output with citations
 - RESTful API interface
 - Docker support
 
@@ -16,36 +16,39 @@ This microservice processes raw startup data and generates structured summaries 
 .
 ├── app/
 │   ├── api/
-│   │   └── routes.py
+│   │   └── routes.py          # FastAPI routes and endpoints
 │   ├── core/
-│   │   ├── config.py
-│   │   └── security.py
+│   │   └── config.py         # Application settings and configuration
 │   ├── services/
-│   │   ├── data_processor.py
-│   │   └── llm_service.py
+│   │   ├── data_processor.py # Text processing and cleaning
+│   │   └── llm_service.py    # LLM integration and prompt management
 │   └── models/
-│       └── schemas.py
+│       └── schemas.py        # Pydantic models for request/response
 ├── data/
-│   └── raw/
-├── notebooks/
-│   └── analysis.ipynb
-├── tests/
+│   ├── raw/                  # Raw data files
+|   |   |--...
+│   └── processed/            # Processed data output
+|   |   |--...
+├── notebooks/                # Jupyter notebooks for analysis
+|   |   |--- messy_data_gen.ipynb
 ├── Dockerfile
-├── requirements.txt
-└── main.py
+├── requirements.txt          # All python library dependencies
+└── main.py                   # Application entry point
+└── README.md                   # Project overview
 ```
 
 ## Setup Instructions
+### I created this project on an M1 Macbook Pro, so adjust any of these commands as necessary
 
 1. Create a virtual environment:
 ```bash
 python -m venv env
-source env/bin/activate  # On Windows: .\env\Scripts\activate
+source env/bin/activate
 ```
 
 2. Install dependencies:
 ```bash
-pip install -r requirements.txt
+pip3 install -r requirements.txt
 ```
 
 3. Set up environment variables:
@@ -61,14 +64,14 @@ uvicorn main:app --reload
 
 ## API Usage
 
-### Summarize Startup Data
+### Summarizing Startup Data
 
 **Endpoint:** `POST /api/v1/summarize`
 
 **Request Body:**
 ```json
 {
-    "data": "Raw startup data text or URL",
+    "data": "Raw startup data text here",
     "max_length": 500
 }
 ```
@@ -76,14 +79,43 @@ uvicorn main:app --reload
 **Response:**
 ```json
 {
-    "summary": "Structured summary of the startup data",
-    "citations": ["citation1", "citation2"],
+    "startup_info": {
+        "name": "Company Name",
+        "industry": "Industry",
+        "location": "Location",
+        "founded_year": "Year",
+        "funding_total_usd": "Amount",
+        "funding_stage": "Stage",
+        "investors": ["Investor 1", "Investor 2"],
+        "acquiring_company": "Acquirer Name",
+        "acquisition_date": "Date",
+        "acquisition_price": "Amount",
+        "source": "Source"
+    },
     "metadata": {
-        "source": "data_source",
-        "timestamp": "2023-11-15T12:00:00Z"
+        "processing_time": 1.23,
+        "model_used": "gpt-4o-mini",
+        "timestamp": "2024-01-01T12:00:00Z"
     }
 }
 ```
+
+## Features in Detail
+
+### Data Processing
+- Text cleaning and normalization
+- Support for both funding and acquisition data
+- Automatic detection of inputted summary type needed (funding vs acquisition)
+
+### LLM Integration
+- Structured prompt engineering
+- Temperature for varied outputs
+
+### API Features
+- Async request handling
+- Input validation
+- Structured error responses
+- CORS support
 
 ## Docker Support
 
@@ -92,14 +124,6 @@ Build and run with Docker:
 docker build -t startup-summarizer .
 docker run -p 8000:8000 startup-summarizer
 ```
-
-## Data Sources
-
-The service is designed to work with various startup datasets, including:
-- Crunchbase data
-- Startup news articles
-- Company reports
-- Market analysis documents
 
 ## License
 

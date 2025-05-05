@@ -1,6 +1,7 @@
+import os
+
 from pydantic_settings import BaseSettings
 from functools import lru_cache
-import os
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -22,12 +23,5 @@ class Settings(BaseSettings):
     MAX_INPUT_LENGTH: int = 8000
     MIN_SUMMARY_LENGTH: int = 100
     MAX_SUMMARY_LENGTH: int = 500
-    
-    class Config:
-        case_sensitive = True
 
-@lru_cache()
-def get_settings() -> Settings:
-    return Settings()
-
-settings = get_settings() 
+settings = Settings()

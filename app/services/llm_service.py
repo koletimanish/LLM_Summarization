@@ -1,8 +1,8 @@
 import time
 import json
-from datetime import datetime
 
-from typing import List, Dict, Any
+from datetime import datetime
+from typing import Dict, Any
 from openai import OpenAI
 from app.core.config import settings
 
@@ -11,6 +11,7 @@ class LLMService:
         self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
         self.model = settings.DEFAULT_MODEL
     
+    # Test function to check if the LLM API is working
     def _test_model(self):
         response = self.client.chat.completions.create(
             model=self.model,
@@ -18,11 +19,10 @@ class LLMService:
         )
         return response.choices[0].message.content
     
+    # Manually generate messy/raw startup data to test the LLM API
     def _generate_messy_data(self, row_data):
-        row_data = row_data.to_dict()
+        row_data = row_data.to_dict() # Passed in from cleaned and processed data
         structured_json = json.dumps(row_data, indent=2)
-
-        print(structured_json)
 
         prompt = f"""You are a tech or business journalist writing a short paragraph based on structured startup data. 
             Each paragraph should sound natural, as if it were taken from an article, press release, blog post, or investor newsletter.
@@ -49,6 +49,7 @@ class LLMService:
         )
         return response.choices[0].message.content
 
+    # System prompt for the LLM to analyze messy/raw startup data and extract structured information
     def _create_system_prompt(self) -> str:
         return """You are an intelligent information extractor that analyzes messy or unstructured descriptions of startups.
 
@@ -72,18 +73,20 @@ class LLMService:
 
         Examples of valid output:
         {
-        "name": "Fintrack",
-        "industry": "Fintech",
-        "location": "New York",
+        "name": "Vinatta",
+        "industry": "Healthcare",
+        "location": "Remote, USA",
         "founded_year": 2020,
-        "funding_stage": "Series A",
-        "investors": ["Sequoia Capital"],
-        "acquiring_company": "Plaid",
-        "acquisition_date": "2021-01-01",
-        "acquisition_price": "100M",
-        "source": "www.techcrunch.com"
-        }"""
+        "funding_stage": "Pre-Seed",
+        "investors": null,
+        "acquiring_company": null,
+        "acquisition_date": null,
+        "acquisition_price": null,
+        "source": "https://www.techcrunch.com"
+        }
+        """
 
+    # User prompt for the LLM to generate a summary of the startup data given user input and previous system prompt
     def _create_user_prompt(self, text: str, max_length: int) -> str:
         return f"""Please analyze the following startup data and provide a summary of maximum {max_length} words:
 
@@ -91,6 +94,7 @@ class LLMService:
 
         Remember to include specific citations from the provided text and maintain a professional tone."""
 
+    # Async function to generate a summary of the startup data given user input and previous system prompt
     async def generate_summary(self, text: str, max_length: int = 500) -> Dict[str, Any]:
         start_time = time.time()
         
@@ -105,11 +109,8 @@ class LLMService:
                 max_tokens=settings.MAX_TOKENS
             )
             
-            # Extract the response content
+            # Extract and parse the response content
             content = response.choices[0].message.content
-            
-            # Parse the JSON response
-            import json
             startup_info = json.loads(content)
             
             # Add processing metadata
@@ -117,10 +118,10 @@ class LLMService:
             
             return {
                 "startup_info": startup_info,
-                "metadata": {
+                "metadata": { # Unnecessary for now, but could be useful for future reference/implementations
                     "processing_time": processing_time,
                     "model_used": self.model,
-                    "timestamp": datetime.utcnow()
+                    "timestamp": datetime.now(datetime.UTC)
                 }
             }
             

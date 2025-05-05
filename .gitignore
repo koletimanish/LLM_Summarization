@@ -9,8 +9,6 @@ env/*
 data/processed/
 data/raw/
 
-notebooks/
-
 .DS_Store
 
 .venv
