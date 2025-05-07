@@ -4,6 +4,7 @@ env.*
 env/*
 
 ./env/*
+.env
 
 data/processed/
 data/raw/
