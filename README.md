@@ -58,6 +58,8 @@ Create a `.env` file in the root directory with:
 OPENAI_API_KEY=your_api_key_here
 ```
 
+Contact me if you need an OpenAPI Key! I couldn't put it in the repository for safety reasons.
+
 4. Run the application:
 ```bash
 uvicorn main:app --reload
@@ -166,6 +168,15 @@ If you haven't already, run the Docker application or the commands above. Then o
 - CORS support
 
 ## Docker Support
+
+Prior to running with Docker, please make sure you have an OpenAPI key and have it saved
+in a .env file like this:
+
+```
+OPENAI_API_KEY=your_api_key_here
+```
+
+Contact me if you need an OpenAPI Key! I couldn't put it in the repository for safety reasons.
 
 Build and run with Docker:
 ```bash
