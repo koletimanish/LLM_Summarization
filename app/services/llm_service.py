@@ -1,7 +1,7 @@
 import time
 import json
 
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import Dict, Any
 from openai import OpenAI
 from app.core.config import settings
@@ -121,7 +121,7 @@ class LLMService:
                 "metadata": { # Unnecessary for now, but could be useful for future reference/implementations
                     "processing_time": processing_time,
                     "model_used": self.model,
-                    "timestamp": datetime.now(datetime.UTC)
+                    "timestamp": datetime.now(timezone.utc)
                 }
             }
             
